@@ -1,0 +1,25 @@
+global stream;
+
+function peek() {
+	return stream[0];
+}
+
+function advance() {
+	stream = stream + 1;
+}
+
+extern isspace();
+
+function stripWhitespace_andcomments() {
+	while true {
+		if peek() == '#' {
+			while (peek() != '\n') {
+				if (!peek())
+					die()
+			}
+		}
+		if isspace(peek()) {
+			advance();
+		}
+	}
+}

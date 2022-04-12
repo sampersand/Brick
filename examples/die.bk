@@ -1,0 +1,6 @@
+extern fdopen();
+extern fputs();
+
+function die(msg) {
+	fputs(msg, fdopen("/dev/stderr", "w"));
+}

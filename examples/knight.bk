@@ -1,0 +1,25 @@
+extern die();
+extern putchar();
+
+function dump_ele(ele) {
+	local kind = ele[0];
+
+	if kind == 'N' { return printf("Integer(%lld)", ele[1]); }
+	if kind == 'S' { return printf("String(%s)", ele[1]); }
+	if kind == 'C' {
+		if ele[1] == 'T' { return printf("Boolean(true)"); }
+		if ele[1] == 'F' { return printf("Boolean(false)"); } 
+		if ele[1] == 'N' { return printf("Boolean(null)"); }
+		die("unknown constant encountered");
+	}
+	if kind == 'I' { return printf("Identifier(%s)", ele[1]); }
+	if kind == 'A' {
+		printf("Ast(%c", ele[1]);
+		printf("Identifier(%s)", ele[1]);
+	}
+}
+
+function main() {
+	dump_ele(['N', 'Q']);
+	putchar('\n');
+}

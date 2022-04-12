@@ -1,0 +1,6 @@
+*.o
+brick
+
+examples/*
+!examples/*.bk
+!examples/Makefile

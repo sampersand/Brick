@@ -1,0 +1,26 @@
+function print_fb(num) {
+	if (num % 15) == 0 { return "FizzBuzz"; }
+	if (num % 3) == 0 { return "Fizz"; }
+	if (num % 5) == 0 { return "Buzz"; }
+	return itoa(num);
+}
+
+extern puts();
+
+global max;
+function dofizzbuzz() {
+	local i = 0;
+	while i < max {
+		puts(print_fb(i = i + 1));
+	}
+}
+
+extern strtoll();
+function main(argc, argv) {
+	if argc >= 2 {
+		max = strtoll(argv[1], null, 10);
+	} else {
+		max = 100;
+	}
+	dofizzbuzz();
+}
