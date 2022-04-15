@@ -1,0 +1,127 @@
+global KIND_TRUE;
+global KIND_FALSE;
+global KIND_NULL;
+global KIND_INT;
+global KIND_STR;
+global KIND_VAR;
+
+function initValue() {
+	KIND_TRUE = 'T';
+	KIND_FALSE = 'F';
+	KIND_NULL = 'N';
+	KIND_INT = 'i';
+	KIND_STR = 's';
+	KIND_VAR = 'v';
+}
+
+function cloneval(val) {
+	val[1] = val[1] + 1;
+	return val;
+}
+
+extern arity();
+extern free();
+function freeval(val) {
+	if !(val[1] = val[1] - 1) {
+		return 0;
+	}
+
+	local kind = val[0];
+	if (kind == KIND_STR) + (kind == KIND_VAR) {
+		free(val[2]);
+	} else {
+		if (kind != KIND_TRUE) * (kind != KIND_FALSE) * (kind != KIND_NULL) * (kind != KIND_INT) {
+			local a = arity(val[2]);
+			while a {
+				freeval(val[2 + a]);
+				a = a - 1;
+			}
+		}
+	}
+
+	free(val);
+}
+
+function newInt(num) {
+	return [KIND_INT, 1, num];
+}
+
+function newStr(str) {
+	return [KIND_STR, 1, str];
+}
+
+function newBool(bool) {
+	if bool {
+		return [KIND_TRUE, 1];
+	} else {
+		return [KIND_FALSE, 1];
+	}
+}
+
+extern strtoll();
+extern run();
+function toInt(val) {
+	local kind = val[0];
+
+	if kind == KIND_INT { return val[2]; }
+	if kind == KIND_TRUE { return 1; }
+	if (kind == KIND_FALSE) + (kind == KIND_NULL) { return 0; }
+	if kind == KIND_STR { return strtoll(val[2], null, 10); }
+
+	local ran = run(val);
+	local ret = toInt(ran);
+	freeval(ran);
+	return ret;
+}
+
+extern strdup();
+function toStr(val) {
+	local kind = val[0];
+
+	if kind == KIND_STR { return strdup(val[2]); }
+	if kind == KIND_INT { return itoa(val[2]); }
+	if kind == KIND_TRUE { return strdup("true"); }
+	if kind == KIND_FALSE { return strdup("false"); }
+	if kind == KIND_NULL { return strdup("null"); }
+
+	local ran = run(val);
+	local ret = toStr(ran);
+	freeval(ran);
+	return ret;
+}
+
+function toBool(val) {
+	local kind = val[0];
+
+	if kind == KIND_INT { return val[2]; }
+	if kind == KIND_STR { return strget(val[2], 0); }
+	if kind == KIND_TRUE { return true; }
+	if (kind == KIND_FALSE) + (kind == KIND_NULL) { return false; }
+
+	local ran = run(val);
+	local ret = toBool(ran);
+	freeval(ran);
+	return ret;
+}
+
+extern arity();
+extern putchar();
+function dump(val) {
+	local kind = val[0];
+
+	if kind == KIND_INT { return printf("Integer(%lld)", val[2]); }
+	if kind == KIND_STR { return printf("String(%s)", val[2]); }
+	if kind == KIND_TRUE { return printf("Boolean(true)"); }
+	if kind == KIND_FALSE { return printf("Boolean(false)"); }
+	if kind == KIND_NULL { return printf("Boolean(null)"); }
+	if kind == KIND_VAR { return printf("Identifier(%s)", val[2]); }
+	printf("Ast(%c", val[0]);
+
+	local a = arity(val[0]);
+	local i = 0;
+	while i < a {
+		printf(", ");
+		dump(val[1 + (i = i + 1)]);
+	}
+	return putchar(')');
+}

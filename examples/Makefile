@@ -1,16 +1,17 @@
 BKC=../brick
 
-knight: knight.ko die.ko
+main: main.ko knight.ko parse.ko value.ko function.ko env.ko
 fizzbuzz: fizzbuzz.ko
 
 .PHONY: clean
 clean:
-	rm *.ko *.c knight fizzbuzz
+	rm *.ko *.c main fizzbuzz
 
 %: %.ko
 	$(CC) $^ -o $@
+
 %.ko: %.bk | $(BKC)
-	../brick $^ $@ -c
+	$(BKC) $^ $@ -c
 
 ../brick:
 	make -C.. brick

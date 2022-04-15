@@ -52,7 +52,11 @@ void compile_primary(ast_primary *p, compiler *c) {
 
 	case AST_VAR: FPUTS(p->str); break;
 	case AST_INT: FPRINTF("%lld", p->num); break;
-	case AST_STR: FPRINTF("(bint) \"%s\"", p->str); break; // todo: escapes 
+	case AST_STR:
+		FPUTS("(bint) \"");
+		for (int i = 0; p->str[i]; ++i) FPRINTF("\\x%02x", p->str[i]);
+		FPUTC('"');
+		break;
 	case AST_TRUE: FPUTS("1"); break;
 	case AST_FALSE: FPUTS("0"); break;
 	case AST_NULL: FPUTS("0"); break;
@@ -169,18 +173,28 @@ void init_compiler(compiler *c) {
 	FPUTS("\
 #include <stdarg.h>\n\
 typedef long long bint;\n\
+/* these are needed because brick doesnt allow for va fns */\n\
 extern int sprintf(bint,bint,...);\n\
 extern int printf(bint,...);\n\
 extern int fprintf(bint,bint,...);\n\
-extern void*malloc(unsigned long);\n\
-extern void free(void*);\n\
-static bint itoa(bint a){char*c=malloc(45);sprintf((bint)c,(bint)\"%lld\",a);return(bint)c;}\n\
-static bint strget(bint s,bint i){return(bint)((char*)s)[i];}\n\
+static bint itoa(bint a){\n\
+	extern void*malloc(unsigned long);\n\
+	char*c=malloc(45);sprintf((bint)c,(bint)\"%lld\",a);\n\
+	return(bint)c;}\n\
+static bint strget(bint s,bint i){return ((char*)s)[(int)i];}\n\
 static bint strset(bint s,bint i,bint val){return((char*)s)[i]=(char)val;}\n\
+extern void*fdopen(int,char*);\n\
+static _Noreturn bint die(bint fmt,...){\n\
+	extern int fputc(int,void*);\n\
+	extern int vfprintf(void*,char*,va_list);\n\
+	extern _Noreturn void exit(int);\n\
+	va_list ap;va_start(ap,fmt);vfprintf(fdopen(2, \"w\"),fmt,ap);va_end(ap);\n\
+	fputc('\\n',fdopen(2,\"w\"));exit(1);}\n\
 static bint _brick_make_ary(int len,...){\n\
+	extern void*malloc(unsigned long);\n\
 	bint *m=malloc(sizeof(bint)*len);\n\
 	va_list l;va_start(l,len);for(int i=0;i<len;i++)m[i]=va_arg(l, bint);va_end(l);\n\
-	return (bint) m;}\n\
+	return (bint) m;}\n\n/*user-defined code*/\n\
 ");
 }
 

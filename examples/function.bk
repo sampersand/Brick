@@ -1,0 +1,360 @@
+extern malloc();
+extern free();
+extern strpbrk();
+function arity(c) {
+	local str = malloc(2);
+	strset(str, 0, c);
+	strset(str, 1, 0);
+
+	if (strpbrk(str, "RPTFN")) { free(str); return 0; }
+	if (strpbrk(str, "EBC`Q!LDO")) { free(str); return 1; }
+	if (strpbrk(str, "+-*/%^<>?&|;=W")) { free(str); return 2; }
+	if (strpbrk(str, "IG")) { free(str); return 3; }
+	if (strpbrk(str, "S")) { free(str); return 4; }
+	free(str); return -1;
+}
+
+extern time();
+extern srand();
+function initFuncs() {
+	srand(time(0));
+}
+
+extern fgetln();
+extern memcpy();
+function prompt() {
+	local lenn = [0];
+	local line = fgetln(fdopen(0, "r"), lenn);
+	local len = lenn[0];
+	free(lenn);
+
+	if len != 0 {
+		if strget(line, len) != '\n' {
+			len = len - 1;
+			if len != 0 {
+				if strget(line, len) == '\r' {
+					len = len - 1;
+				}
+			}
+		}
+	}
+
+	local ret = malloc(len + 1);
+	memcpy(ret, line, len);
+	strset(ret, len, 0);
+
+	return ret;
+}
+
+extern popen();
+extern realloc();
+extern fread();
+extern ferror();
+extern pclose();
+function runsystem(command) {
+	local stream = popen(command, "r");
+	if !stream {
+		die("unable to execute command '%s'", command);
+	}
+
+	local tmp;
+	local cap = 2048;
+	local len = 0;
+	local ret = malloc(cap);
+
+	while (tmp = fread(ret + len, 1, cap - len, stream)) {
+		len = len + tmp;
+		if len == cap {
+			ret = realloc(ret, cap = cap * 2);
+		}
+	}
+
+	if ferror(stream) {
+		die("issue reading from stream");
+	}
+
+	ret = realloc(ret, len + 1);
+	strset(ret, len, 0);
+
+	if pclose(stream) == -1 {
+		die("unable to close command stream");
+	}
+
+	return ret;
+}
+
+extern getVar();
+extern setVar();
+
+extern newInt();
+extern newStr();
+extern newBool();
+extern toInt();
+extern toStr();
+extern toBool();
+extern cloneval();
+extern freeval();
+extern KIND_INT;
+extern KIND_STR;
+extern KIND_VAR;
+extern KIND_TRUE;
+extern KIND_FALSE;
+extern KIND_NULL;
+
+
+extern rand();
+extern dump();
+extern strlen();
+extern strcat();
+extern strcmp();
+extern putchar();
+function run(ast) {
+	local kind = ast[0];
+
+	if (kind == KIND_INT) + (kind == KIND_STR) + (kind == KIND_TRUE) +
+		(kind == KIND_FALSE) + (kind == KIND_NULL) {
+		return cloneval(ast);
+	}
+
+	if kind == KIND_VAR {
+		return getVar(ast[2]);
+	}
+
+	if kind == 'R' {
+		return newInt(rand());
+	}
+ 	if kind == 'P' {
+ 		return newStr(prompt());
+	}
+
+	local arg1 = ast[2];
+	local ret;
+
+	if kind == 'E' {
+		local str = toStr(arg1);
+		ret = run(str);
+		free(str);
+		return ret;
+	}
+	if kind == 'B' {
+		return cloneval(arg1);
+	}
+	if kind == 'C' {
+		ret = run(arg1 = run(arg1));
+		freeval(arg1);
+		return ret;
+	}
+	if kind == '`' {
+		local cmd = toStr(arg1);
+		ret = newStr(runsystem(cmd));
+		free(cmd);
+		return ret;
+	}
+	if kind == 'Q' {
+		exit(toInt(run(arg1)));
+	}
+	if kind == '!' {
+		return newBool(!toBool(arg1));
+	}
+	if kind == 'L' {
+		local str = toStr(arg1);
+		ret = newInt(strlen(str));
+		free(str);
+		return ret;
+	}
+	if kind == 'D' {
+		dump(arg1 = run(arg1));
+		putchar('\n');
+		return arg1;
+	}
+	if kind == 'O' {
+		local str = toStr(arg1);
+		local len = strlen(str);
+		local sub = 0;
+		if len {
+			if strget(str, len - 1) == '\\' {
+				sub = 1;
+			}
+		}
+		printf("%*s", len - sub, str);
+		if !sub {
+			putchar('\n');
+		}
+		free(str);
+		return [KIND_NULL, 1];
+	}
+
+	local arg2 = ast[3];
+	if kind == '+' {
+		if (arg1 = run(arg1))[0] == KIND_STR {
+			local str2 = toStr(arg2);
+			ret = malloc(strlen(arg1[2]) + strlen(str2) + 1);
+			strset(ret, 0, 0);
+			strcat(ret, arg1[2]);
+			strcat(ret, str2);
+			free(str2);
+			ret = newStr(ret);
+		} else {
+			ret = newInt(arg1[2] + toInt(arg2));
+		}
+		freeval(arg1);
+		return ret;
+	}
+	if kind == '-' {
+		return newInt(toInt(arg1) - toInt(arg2));
+	}
+	if kind == '*' {
+		if (arg1 = run(arg1))[0] == KIND_STR {
+			local num = toInt(arg2);
+			ret = malloc((strlen(arg1[2]) * num) + 1);
+			strset(ret, 0, 0);
+			while num {
+				strcat(ret, arg1[2]);
+			}
+			ret = newStr(ret);
+		} else {
+			ret = newInt(arg1[2] * toInt(arg2));
+		}
+		freeval(arg1);
+		return ret;
+	}
+	if kind == '/' {
+		return newInt(toInt(arg1) / toInt(arg2));
+	}
+	if kind == '*' {
+		return newInt(toInt(arg1) * toInt(arg2));
+	}
+	if kind == '^' {
+		local base = toInt(arg1);
+		local exp = toInt(arg2);
+
+		if base == 1 { return newInt(1); }
+		if base == -1 { if exp % 2 { return newInt(-1); } return newInt(1); }
+		if exp == 1 { return newInt(base); }
+		if !exp { return newInt(1); }
+		if exp < 0 { return newInt(0); }
+		ret = 1;
+		while exp {
+			ret = ret * base;
+			exp = exp - 1;
+		}
+		return newInt(ret);
+	}
+	if kind == '<' {
+		if (arg1 = run(arg1))[0] == KIND_STR {
+			local str = toStr(arg2);
+			ret = newBool(strcmp(arg1[2], str) < 0);
+			free(str);
+		} else {
+			if arg1[0] == KIND_INT {
+				ret = newBool(arg1[2] < toInt(arg2));
+			} else {
+				ret = newBool((arg1[0] == KIND_FALSE) * toBool(arg2));
+			}
+		}
+		freeval(arg1);
+		return ret;
+	}
+	if kind == '>' {
+		if (arg1 = run(arg1))[0] == KIND_STR {
+			local str = toStr(arg2);
+			ret = newBool(strcmp(arg1[2], str) > 0);
+			free(str);
+		} else {
+			if arg1[0] == KIND_INT {
+				ret = newBool(arg1[2] > toInt(arg2));
+			} else {
+				ret = newBool((arg1[0] == KIND_TRUE) * !toBool(arg2));
+			}
+		}
+		freeval(arg1);
+		return ret;
+	}
+	if kind == '?' {
+		arg1 = run(arg1);
+		arg2 = run(arg2);
+		if arg1[0] == arg2[0] {
+			if arg1[0] == KIND_STR {
+				ret = newBool(!strcmp(arg1[2], arg2[2]));
+			} else {
+				if arg1[0] == KIND_INT {
+					ret = newBool(arg1[2] == arg2[2]);
+				} else {
+					ret = newBool(arg1[0] == arg2[0]);
+				}
+			}
+		}
+		freeval(arg1);
+		freeval(arg2);
+		return ret;
+	}
+	if kind == '&' {
+		if toBool(arg1 = run(arg1)) {
+			freeval(arg1);
+			return run(arg2);
+		}
+
+		return arg1;
+	}
+	if kind == '|' {
+		if !toBool(arg1 = run(arg1)) {
+			freeval(arg1);
+			return run(arg2);
+		}
+		
+		return arg1;
+	}
+	if kind == ';' {
+		freeval(run(arg1));
+		return run(arg2);
+	}
+	if kind == '=' {
+		if arg1[0] != KIND_VAR {
+			die("can only assign vars");
+		}
+		setVar(arg1[2], ret = run(arg2));
+		return cloneval(ret);
+	}
+	if kind == 'W' {
+		while toBool(arg1) {
+			freeval(run(arg2));
+		}
+		return [KIND_NULL, 1];
+	}
+
+	local arg3 = ast[4];
+	if kind == 'I' {
+		if toBool(arg1) {
+			return run(arg2);
+		}
+		return run(arg3);
+	}
+	if kind == 'G' {
+		arg1 = toStr(arg1);
+		arg2 = toInt(arg2);
+		arg3 = toInt(arg3);
+		ret = malloc(arg3 + 1);
+		memcpy(ret, arg1 + arg2, arg3);
+		strset(ret, arg3, 0);
+		free(arg1);
+		return newStr(ret);
+	}
+
+	local arg4 = ast[5];
+	if kind == 'S' {
+		arg1 = toStr(arg1);
+		arg2 = toInt(arg2);
+		arg3 = toInt(arg3);
+		arg4 = toStr(arg4);
+		ret = malloc((strlen(arg1) - arg3) + strlen(arg4) + 1);
+		memcpy(ret, arg1, arg2);
+		strset(ret, arg2, 0);
+		strcat(ret, arg4);
+		strcat(ret, arg1 + arg2 + arg3);
+		free(arg1);
+		free(arg4);
+		return newStr(ret);
+	}
+
+	die("unknown function name '%c'", kind);
+}

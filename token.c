@@ -93,8 +93,8 @@ static token parse_string(tokenizer *tzr) {
 		if (c == '\\')  {
 			c = peek(tzr);
 
-			if (quote == '\"' || (c == '\\' || c == '\'' || c == '\"'))
-				was_anything_escaped = true, advance(tzr);
+			// if (quote == '\"' || (c == '\\' || c == '\'' || c == '\"'))
+			was_anything_escaped = true, advance(tzr);
 		}
 	}
 
@@ -121,7 +121,7 @@ static token parse_string(tokenizer *tzr) {
 
 		char c = start[++i];
 
-		if (quote == '\'') {
+		if (quote == '\'' && 0) {
 			if (c != '\\' && c != '\"' && c != '\'')
 				str[stridx++] = '\\';
 		} else {
@@ -153,7 +153,7 @@ after_escaping:
 		uint64_t n = 0;
 		switch (strlen(str)) {
 		default:
-			die("char literals may only be 8 characters max");
+			die("char literals may only be 8 characters max, not %lu", strlen(str));
 		case 8: n = (n << 8) + str[7];
 		case 7: n = (n << 8) + str[6];
 		case 6: n = (n << 8) + str[5];
@@ -162,6 +162,7 @@ after_escaping:
 		case 3: n = (n << 8) + str[2];
 		case 2: n = (n << 8) + str[1];
 		case 1: n = (n << 8) + str[0];
+		case 0:
 			return (token) { .kind = TK_INT, .num = n };
 		}
 	}

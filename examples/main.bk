@@ -1,0 +1,10 @@
+extern play();
+extern init();
+extern dump();
+function main() {
+	init();
+	// /*dump*/(play("O + ''31'' 24 1 "));
+	// /*dump*/(play("O + '31' 24 1 "));
+	// /*dump*/(play("O S 'abcdef' 1 1 'lol'"));
+	/*dump*/(play("D ^ 2 4"));
+}

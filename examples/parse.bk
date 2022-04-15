@@ -1,7 +1,12 @@
 global stream;
+global last_peeked_char;
 
+extern malloc();
+extern realloc();
+
+extern puts();
 function peek() {
-	return stream[0];
+	return last_peeked_char = strget(stream, 0);
 }
 
 function advance() {
@@ -9,17 +14,111 @@ function advance() {
 }
 
 extern isspace();
-
-function stripWhitespace_andcomments() {
+function stripWhitespaceAndComments() {
 	while true {
 		if peek() == '#' {
-			while (peek() != '\n') {
-				if (!peek())
-					die()
+			while peek() != '\n' {
+				advance(); // premature EOF is UB anyways.
 			}
 		}
-		if isspace(peek()) {
+
+		if !isspace(last_peeked_char) {
+			break;
+		}
+
+		advance();
+	}
+}
+
+extern isdigit();
+extern newInt();
+function parseInteger() {
+	local is_neg;
+
+	if (is_neg = (peek() == '-')) + (last_peeked_char == '+') {
+		advance();
+	}
+
+	local acc = 0;
+	while isdigit(peek()) {
+		acc = (acc * 10) + (last_peeked_char - '0');
+		advance();
+	}
+
+	if is_neg { acc = -acc; }
+	return newInt(acc);
+}
+
+extern isalnum();
+extern KIND_VAR;
+function parseIdentifier() {
+	local len = 0;
+	local s = malloc(len);
+
+	while (isalnum(peek()) + (last_peeked_char == '_')) {
+		s = realloc(s, len = len + 1);
+		strset(s, len - 1, last_peeked_char);
+		advance();
+	}
+
+	strset(s, len, '\0');
+	return [KIND_VAR, 1, s];
+}
+
+extern newStr();
+function parseString() {
+	local quote = last_peeked_char;
+	advance();
+
+	local len = 0;
+	local s = malloc(len);
+
+	while (peek() * (last_peeked_char != quote)) {
+		s = realloc(s, len = len + 1);
+		strset(s, len - 1, last_peeked_char);
+		advance();
+	}
+
+	if !last_peeked_char {
+		die("unterminated string");
+	}
+	advance();
+
+	strset(s, len, '\0');
+	return newStr(s);
+}
+
+extern strndup();
+extern isupper();
+extern arity();
+extern parse(); // it's just defined right later.
+
+function parseFunction() {
+	local name = last_peeked_char;
+	advance();
+	if isupper(last_peeked_char) {
+		while isupper(peek()) + (last_peeked_char == '_') {
 			advance();
 		}
 	}
+
+	local a = arity(name);
+
+	if a == 0 { return [name, 1]; }
+	if a == 1 { return [name, 1, parse()]; }
+	if a == 2 { return [name, 1, parse(), parse()]; }
+	if a == 3 { return [name, 1, parse(), parse(), parse()]; }
+	if a == 4 { return [name, 1, parse(), parse(), parse(), parse()]; }
+	die("unknown function '%c'", name);
+}
+
+extern islower();
+function parse() {
+	stripWhitespaceAndComments();
+	local c = peek();
+
+	if (isdigit(last_peeked_char)) { return parseInteger(); }
+	if (islower(last_peeked_char) + (last_peeked_char == '_')) { return parseIdentifier(); }
+	if ((last_peeked_char == '\'') + (last_peeked_char == '\"')) { return parseString(); }
+	return parseFunction();
 }

@@ -1,4 +1,4 @@
-function print_fb(num) {
+function fizzbuzz_string(num) {
 	if (num % 15) == 0 { return "FizzBuzz"; }
 	if (num % 3) == 0 { return "Fizz"; }
 	if (num % 5) == 0 { return "Buzz"; }
@@ -11,7 +11,7 @@ global max;
 function dofizzbuzz() {
 	local i = 0;
 	while i < max {
-		puts(print_fb(i = i + 1));
+		puts(fizzbuzz_string(i = i + 1));
 	}
 }
 
