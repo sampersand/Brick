@@ -1,10 +1,48 @@
 extern play();
 extern init();
-extern dump();
-function main() {
+extern strcmp();
+extern fopen();
+extern getdelim();
+extern fclose();
+extern free();
+
+function read_file(filename) {
+	local buf = [0];
+	local size = [0];
+	local fp = fopen(filename, "r");
+	if !fp {
+		die("unable to open file '%s'", filename);
+	}
+	// lol imagine checking for errors
+	// technically UB in c but whatever
+	getdelim(buf,size,-1,fp);
+
+	if !fclose(fp) {
+		die("unable to close file");
+	}
+	free(size);
+	local ret = buf[0];
+	free(buf);
+	return buf;
+}
+
+function usage(progname) {
+	die("usage: %s (-e 'expression' | -f filename)", progname);
+}
+
+function main(argc, argv) {
+	if argc != 3 {
+		usage(argv[0]);
+	}
+
 	init();
-	// /*dump*/(play("O + ''31'' 24 1 "));
-	// /*dump*/(play("O + '31' 24 1 "));
-	// /*dump*/(play("O S 'abcdef' 1 1 'lol'"));
-	/*dump*/(play("D ^ 2 4"));
+	if !strcmp(argv[1], "-e") {
+		play(argv[2]);
+	} else {
+		if !strcmp(argv[1], "-f") {
+			play(read_file(argv[2]));
+		} else {
+			usage(argv[0]);
+		}
+	}
 }

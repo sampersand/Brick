@@ -181,6 +181,7 @@ static bint itoa(bint a){\n\
 	extern void*malloc(unsigned long);\n\
 	char*c=malloc(45);sprintf((bint)c,(bint)\"%lld\",a);\n\
 	return(bint)c;}\n\
+#define VALSIZE (sizeof(bint))\n\
 static bint strget(bint s,bint i){return ((char*)s)[(int)i];}\n\
 static bint strset(bint s,bint i,bint val){return((char*)s)[i]=(char)val;}\n\
 extern void*fdopen(int,char*);\n\
@@ -188,8 +189,9 @@ static _Noreturn bint die(bint fmt,...){\n\
 	extern int fputc(int,void*);\n\
 	extern int vfprintf(void*,char*,va_list);\n\
 	extern _Noreturn void exit(int);\n\
+	extern void fflush(int);\n\
 	va_list ap;va_start(ap,fmt);vfprintf(fdopen(2, \"w\"),fmt,ap);va_end(ap);\n\
-	fputc('\\n',fdopen(2,\"w\"));exit(1);}\n\
+	fflush(0);fputc('\\n',fdopen(2,\"w\"));exit(1);}\n\
 static bint _brick_make_ary(int len,...){\n\
 	extern void*malloc(unsigned long);\n\
 	bint *m=malloc(sizeof(bint)*len);\n\

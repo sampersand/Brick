@@ -8,7 +8,7 @@ clean:
 	rm *.ko *.c main fizzbuzz
 
 %: %.ko
-	$(CC) $^ -o $@
+	$(CC) -fsanitize=address,undefined -g $^ -o $@
 
 %.ko: %.bk | $(BKC)
 	$(BKC) $^ $@ -c

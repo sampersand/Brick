@@ -117,7 +117,7 @@ function run(ast) {
 	}
 
 	if kind == KIND_VAR {
-		return getVar(ast[2]);
+		return cloneval(getVar(ast[2]));
 	}
 
 	if kind == 'R' {
@@ -305,6 +305,7 @@ function run(ast) {
 		return arg1;
 	}
 	if kind == ';' {
+		dump(arg1);putchar('\n');
 		freeval(run(arg1));
 		return run(arg2);
 	}
