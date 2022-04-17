@@ -14,7 +14,11 @@ function advance() {
 }
 
 extern isspace();
+extern strpbrk();
+extern free();
 function stripWhitespaceAndComments() {
+	local l = malloc(2);
+	strset(l, 1, 0);
 	while true {
 		if peek() == '#' {
 			while peek() != '\n' {
@@ -22,12 +26,13 @@ function stripWhitespaceAndComments() {
 			}
 		}
 
-		if !isspace(last_peeked_char) {
+		strset(l, 0, last_peeked_char);
+		if !isspace(last_peeked_char) * !strpbrk(l, "(){}[]:") {
 			break;
 		}
-
 		advance();
 	}
+	free(l);
 }
 
 extern isdigit();
@@ -53,11 +58,11 @@ extern isalnum();
 extern KIND_VAR;
 function parseIdentifier() {
 	local len = 0;
-	local s = malloc(len);
+	local s = malloc(1);
 
 	while (isalnum(peek()) + (last_peeked_char == '_')) {
-		s = realloc(s, len = len + 1);
-		strset(s, len - 1, last_peeked_char);
+		strset(s, len, last_peeked_char);
+		s = realloc(s, 1 + (len = len + 1));
 		advance();
 	}
 
@@ -71,10 +76,10 @@ function parseString() {
 	advance();
 
 	local len = 0;
-	local s = malloc(len);
+	local s = malloc(1 + len);
 
 	while (peek() * (last_peeked_char != quote)) {
-		s = realloc(s, len = len + 1);
+		s = realloc(s, 1 + (len = len + 1));
 		strset(s, len - 1, last_peeked_char);
 		advance();
 	}

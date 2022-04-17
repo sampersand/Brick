@@ -7,7 +7,7 @@ extern fclose();
 extern free();
 
 function read_file(filename) {
-	local buf = [0];
+	local buf = [0]; # lol no stack alloc...
 	local size = [0];
 	local fp = fopen(filename, "r");
 	if !fp {
@@ -17,13 +17,13 @@ function read_file(filename) {
 	// technically UB in c but whatever
 	getdelim(buf,size,-1,fp);
 
-	if !fclose(fp) {
+	if fclose(fp) {
 		die("unable to close file");
 	}
-	free(size);
 	local ret = buf[0];
+	free(size);
 	free(buf);
-	return buf;
+	return ret;
 }
 
 function usage(progname) {

@@ -221,8 +221,8 @@ function run(ast) {
 	if kind == '/' {
 		return newInt(toInt(arg1) / toInt(arg2));
 	}
-	if kind == '*' {
-		return newInt(toInt(arg1) * toInt(arg2));
+	if kind == '%' {
+		return newInt(toInt(arg1) % toInt(arg2));
 	}
 	if kind == '^' {
 		local base = toInt(arg1);
@@ -305,7 +305,6 @@ function run(ast) {
 		return arg1;
 	}
 	if kind == ';' {
-		dump(arg1);putchar('\n');
 		freeval(run(arg1));
 		return run(arg2);
 	}
