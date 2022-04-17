@@ -7,7 +7,7 @@ function arity(c) {
 	strset(str, 1, 0);
 
 	if (strpbrk(str, "RPTFN")) { free(str); return 0; }
-	if (strpbrk(str, "EBC`Q!LDO")) { free(str); return 1; }
+	if (strpbrk(str, "EBC`Q!LDOA~")) { free(str); return 1; }
 	if (strpbrk(str, "+-*/%^<>?&|;=W")) { free(str); return 2; }
 	if (strpbrk(str, "IG")) { free(str); return 3; }
 	if (strpbrk(str, "S")) { free(str); return 4; }
@@ -103,6 +103,7 @@ extern KIND_NULL;
 
 
 extern rand();
+extern play();
 extern dump();
 extern strlen();
 extern strcat();
@@ -132,7 +133,7 @@ function run(ast) {
 
 	if kind == 'E' {
 		local str = toStr(arg1);
-		ret = run(str);
+		ret = play(str);
 		free(str);
 		return ret;
 	}
@@ -176,12 +177,27 @@ function run(ast) {
 				sub = 1;
 			}
 		}
-		printf("%*s", len - sub, str);
+		printf("%.*s", len - sub, str);
 		if !sub {
 			putchar('\n');
 		}
 		free(str);
 		return [KIND_NULL, 1];
+	}
+	if kind == 'A' {
+		if (arg1 = run(arg1))[0] == KIND_STR {
+			ret = newInt(strget(arg1[2], 0));
+		} else {
+			ret = malloc(2);
+			strset(ret, 0, arg1[2]);
+			strset(ret, 1, 0);
+			ret = newStr(ret);
+		}
+		freeval(arg1);
+		return ret;
+	}
+	if kind == '~' {
+		return newInt(-toInt(arg1));
 	}
 
 	local arg2 = ast[3];
@@ -210,6 +226,7 @@ function run(ast) {
 			strset(ret, 0, 0);
 			while num {
 				strcat(ret, arg1[2]);
+				num = num - 1;
 			}
 			ret = newStr(ret);
 		} else {
@@ -219,17 +236,30 @@ function run(ast) {
 		return ret;
 	}
 	if kind == '/' {
-		return newInt(toInt(arg1) / toInt(arg2));
+		arg1 = toInt(arg1);
+		if !(arg2 = toInt(arg2)) {
+			die("division by zero");
+		}
+		return newInt(arg1 / arg2);
 	}
 	if kind == '%' {
-		return newInt(toInt(arg1) % toInt(arg2));
+		arg1 = toInt(arg1);
+		if !(arg2 = toInt(arg2)) {
+			die("modulo by zero");
+		}
+		return newInt(arg1 % arg2);
 	}
 	if kind == '^' {
 		local base = toInt(arg1);
 		local exp = toInt(arg2);
 
 		if base == 1 { return newInt(1); }
-		if base == -1 { if exp % 2 { return newInt(-1); } return newInt(1); }
+		if base == -1 {
+			if exp % 2 {
+				return newInt(ret = -1); // `ret=` is needed else c assumes it's an `int`
+			}
+			return newInt(1);
+		}
 		if exp == 1 { return newInt(base); }
 		if !exp { return newInt(1); }
 		if exp < 0 { return newInt(0); }
@@ -273,20 +303,21 @@ function run(ast) {
 	if kind == '?' {
 		arg1 = run(arg1);
 		arg2 = run(arg2);
+		ret = false;
 		if arg1[0] == arg2[0] {
 			if arg1[0] == KIND_STR {
-				ret = newBool(!strcmp(arg1[2], arg2[2]));
+				ret = !strcmp(arg1[2], arg2[2]);
 			} else {
 				if arg1[0] == KIND_INT {
-					ret = newBool(arg1[2] == arg2[2]);
+					ret = arg1[2] == arg2[2];
 				} else {
-					ret = newBool(arg1[0] == arg2[0]);
+					ret = arg1[0] == arg2[0];
 				}
 			}
 		}
 		freeval(arg1);
 		freeval(arg2);
-		return ret;
+		return newBool(ret);
 	}
 	if kind == '&' {
 		if toBool(arg1 = run(arg1)) {

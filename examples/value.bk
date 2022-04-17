@@ -112,7 +112,7 @@ function dump(val) {
 	if kind == KIND_STR { return printf("String(%s)", val[2]); }
 	if kind == KIND_TRUE { return printf("Boolean(true)"); }
 	if kind == KIND_FALSE { return printf("Boolean(false)"); }
-	if kind == KIND_NULL { return printf("Boolean(null)"); }
+	if kind == KIND_NULL { return printf("Null()"); }
 	if kind == KIND_VAR { return printf("Identifier(%s)", val[2]); }
 	printf("Ast(%c", val[0]);
 
