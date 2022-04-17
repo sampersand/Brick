@@ -51,15 +51,15 @@ void compile_primary(ast_primary *p, compiler *c) {
 		break;
 
 	case AST_VAR: FPUTS(p->str); break;
-	case AST_INT: FPRINTF("%lld", p->num); break;
+	case AST_INT: FPRINTF("(bint)%lld", p->num); break;
 	case AST_STR:
 		FPUTS("(bint) \"");
 		for (int i = 0; p->str[i]; ++i) FPRINTF("\\x%02x", p->str[i]);
 		FPUTC('"');
 		break;
-	case AST_TRUE: FPUTS("1"); break;
-	case AST_FALSE: FPUTS("0"); break;
-	case AST_NULL: FPUTS("0"); break;
+	case AST_TRUE: FPUTS("(bint)1"); break;
+	case AST_FALSE: FPUTS("(bint)0"); break;
+	case AST_NULL: FPUTS("(bint)0"); break;
 	}
 
 	FPUTC(')');

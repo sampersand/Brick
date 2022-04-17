@@ -254,12 +254,7 @@ function run(ast) {
 		local exp = toInt(arg2);
 
 		if base == 1 { return newInt(1); }
-		if base == -1 {
-			if exp % 2 {
-				return newInt(ret = -1); // `ret=` is needed else c assumes it's an `int`
-			}
-			return newInt(1);
-		}
+		if base == -1 { if exp % 2 { return newInt(-1); } return newInt(1); }
 		if exp == 1 { return newInt(base); }
 		if !exp { return newInt(1); }
 		if exp < 0 { return newInt(0); }
